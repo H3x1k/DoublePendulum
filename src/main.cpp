@@ -46,9 +46,6 @@ int main() {
     float theta1 = 2.0f;
     float theta2 = 0.f;
 
-    sf::RectangleShape rect(sf::Vector2f(100.f, 100.f));
-    rect.getSize();
-
     int N = 100;
     std::vector<DoublePendulum> pendulums;
 
@@ -58,7 +55,7 @@ int main() {
     //}
     pendulums.push_back(DoublePendulum{ anchor, r1, r2, l1, l2, m1, m2, theta1, theta2 });
 
-    sf::Font font("../arial.ttf");
+    sf::Font font("../fonts/arial.ttf");
     sf::Text theta1Text(font);
     sf::Text theta2Text(font);
     theta1Text.setCharacterSize(24);
