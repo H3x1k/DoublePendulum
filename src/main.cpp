@@ -3,15 +3,38 @@
 #include <vector>
 
 #include "DoublePendulum.hpp"
-//#include "SFMLPlot.hpp"
+#include "SFMLPlot.hpp"
 //#include <iostream>
 
-#define PI 3.141592653589793238462643383279f
+constexpr float PI = 3.141592653589793238462643383279f;
 
 const float g = 10.0f;
 
+class CustomRectangle {
+public:
+    sf::Vector2f size;
+    sf::Vector2f position;
+    sf::Vector2f origin;
+    float borderWidth;
+    float cornerRadius;
+    unsigned int quality;
+
+    CustomRectangle() {
+
+    }
+};
+
+
+static float wrapToPi(float angle) {
+    angle = fmodf(angle + PI, 2 * PI);
+    if (angle < 0) angle += 2 * PI;
+    return angle - PI;
+}
+
 int main() {
-    sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "Simple SFML Program");
+    sf::VideoMode fullscreenMode = sf::VideoMode::getDesktopMode();
+
+    sf::RenderWindow window(fullscreenMode, "Simple SFML Program", sf::State::Fullscreen);
     window.setTitle("Double Pendulum Simulation");
     window.setFramerateLimit(120);
 
@@ -19,63 +42,59 @@ int main() {
     auto [width, height] = size;
 
     sf::Vector2f anchor = sf::Vector2f{ (float)width * 0.5f, (float)height * 0.5f };
+    const float r1 = 10.0f, r2 = 10.0f, l1 = 100.0f, l2 = 100.0f, m1 = 1.0f, m2 = 1.0f;
+    float theta1 = 2.0f;
+    float theta2 = 0.f;
 
-    const float r1 = 10.0f;
-    const float r2 = 10.0f;
-
-    const float l1 = 100.0f;
-    const float l2 = 100.0f;
-    const float m1 = 1.0f;
-    const float m2 = 1.0f;
-
-    float theta1 = PI;
-    float theta2 = 3.0f;
+    sf::RectangleShape rect(sf::Vector2f(100.f, 100.f));
+    rect.getSize();
 
     int N = 100;
-
     std::vector<DoublePendulum> pendulums;
 
     float thetarange = 0.001f;
+    //for (int i = 0; i < N; i++) {
+    //    pendulums.push_back(DoublePendulum{ anchor, r1, r2, l1, l2, m1, m2, theta1 + i * thetarange / N, theta2 });
+    //}
+    pendulums.push_back(DoublePendulum{ anchor, r1, r2, l1, l2, m1, m2, theta1, theta2 });
 
-    for (int i = 0; i < N; i++) {
-        pendulums.push_back(DoublePendulum{ anchor, r1, r2, l1, l2, m1, m2, theta1 + i * thetarange / N, theta2 });
-    }
+    sf::Font font("../arial.ttf");
+    sf::Text theta1Text(font);
+    sf::Text theta2Text(font);
+    theta1Text.setCharacterSize(24);
+    theta2Text.setCharacterSize(24);
+    theta2Text.setPosition(sf::Vector2f(0.f, 50.f));
 
-    sf::Clock clock;
+    SFMLPlot plot(sf::Vector2f{ 100.f, 0.f }, sf::Vector2u(400, 400), {-PI, PI}, {-PI, PI});
+    plot.addLine();
+    
+
     const float dt = 1.f / 120.f;
-
-    sf::Image densityMap(size, sf::Color(0, 0, 0, 0));
-
-
     while (window.isOpen()) {
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>())
                 window.close();
+            if (event->is<sf::Event::KeyPressed>() && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape))
+                window.close();
         }
-
-        //float dt = clock.restart().asSeconds();
 
         for (auto& p : pendulums) {
             p.update(dt);
-            sf::Vector2f pos = p.bob2.getPosition();
-            int x = static_cast<int>(pos.x);
-            int y = static_cast<int>(pos.y);
-            if (x >= 0 && x < width && y >= 0 && y < height) {
-                sf::Color c = densityMap.getPixel({ (unsigned int)x, (unsigned int)y });
-                if (c.r < 255) c.r += 1;
-                c.a = 255;
-                densityMap.setPixel({ (unsigned int)x, (unsigned int)y }, c);
-            }
+            plot.addPointToLine(0, sf::Vector2f(wrapToPi(p.theta1), wrapToPi(p.theta2)));
+            theta1Text.setString(std::to_string(p.theta1));
+            theta2Text.setString(std::to_string(p.theta2));
         }
+        
 
         window.clear(sf::Color::Black);
-        sf::Texture texture;
-        texture.loadFromImage(densityMap);
-        sf::Sprite sprite(texture);
-        window.draw(sprite);
+
         for (auto& p : pendulums) {
             p.draw(window);
         }
+        plot.draw(window);
+        window.draw(theta1Text);
+        window.draw(theta2Text);
+
         window.display();
     }
 

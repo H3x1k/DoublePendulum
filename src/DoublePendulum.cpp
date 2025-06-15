@@ -1,5 +1,6 @@
 #include "DoublePendulum.hpp"
 
+
 DoublePendulum::DoublePendulum(
     sf::Vector2f anchor,
     float r1,
@@ -49,6 +50,28 @@ float DoublePendulum::computeAlpha2() {
         (omega1 * omega1 * l1 * (m1 + m2) + g * (m1 + m2) * cosf(theta1) +
             omega2 * omega2 * l2 * m2 * cosf(theta1 - theta2)))
         / (l2 * (2 * m1 + m2 - m2 * cosf(2 * theta1 - 2 * theta2)));
+}
+
+sf::Vector2f DoublePendulum::getBob1Position() {
+    sf::Vector2f pos = {
+        anchor.x + l1 * sinf(theta1),
+        anchor.y + l1 * cosf(theta1)
+    };
+    return pos;
+}
+
+sf::Vector2f DoublePendulum::getBob2Position() {
+    sf::Vector2f pos1 = {
+        anchor.x + l1 * sinf(theta1),
+        anchor.y + l1 * cosf(theta1)
+    };
+
+    sf::Vector2f pos2 = {
+        pos1.x + l2 * sinf(theta2),
+        pos1.y + l2 * cosf(theta2)
+    };
+
+    return pos2;
 }
 
 void DoublePendulum::update(float dt) {

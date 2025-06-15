@@ -2,6 +2,12 @@
 #include <SFML/Graphics.hpp>  
 #include <cmath>
 
+enum NumMethod {
+    ForwardEuler,
+    Verlet,
+    RungeKutta
+};
+
 class DoublePendulum {
 public:
     static constexpr float g = 100.f;
@@ -30,6 +36,8 @@ public:
 
     float computeAlpha1();
     float computeAlpha2();
+    sf::Vector2f getBob1Position();
+    sf::Vector2f getBob2Position();
     void update(float dt);
     void draw(sf::RenderWindow& window);
 };

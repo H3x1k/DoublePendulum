@@ -18,7 +18,8 @@ public:
         std::array<float, 2> rng);
 
     void addLine();
-    void addPointToLine(size_t lineIndex, sf::Vector2f point, sf::Color color = sf::Color::White);
+    void addPointToLine(size_t lineIndex, sf::Vector2f point);
+    sf::Vector2f transformPoint(sf::Vector2f point);
     void draw(sf::RenderWindow& window);
 };
 

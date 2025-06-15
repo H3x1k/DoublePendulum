@@ -10,10 +10,24 @@ void SFMLPlot::addLine() {
     lines.emplace_back();
 }
 
-void SFMLPlot::addPointToLine(size_t lineIndex, sf::Vector2f point, sf::Color color) {
+void SFMLPlot::addPointToLine(size_t lineIndex, sf::Vector2f point) {
     if (lineIndex < lines.size()) {
-        lines[lineIndex].emplace_back(sf::Vertex{ point });
+        point = transformPoint(point);
+        sf::Vertex vertex{point};
+        lines[lineIndex].emplace_back(vertex);
+    } else {
+        throw std::runtime_error("Indexing non-existing line");
     }
+}
+
+sf::Vector2f SFMLPlot::transformPoint(sf::Vector2f point) {
+    float nx = (point.x - domain[0]) / (domain[1] - domain[0]);
+    float ny = (point.y - range[0]) / (range[1] - range[0]);
+
+    return {
+        position.x + nx * size.x,
+        position.y + (1.f - ny) * size.y // flip Y so higher y-values are up
+    };
 }
 
 void SFMLPlot::draw(sf::RenderWindow& window) {
