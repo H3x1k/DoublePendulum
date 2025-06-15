@@ -10,20 +10,66 @@ constexpr float PI = 3.141592653589793238462643383279f;
 
 const float g = 10.0f;
 
-class CustomRectangle {
-public:
-    sf::Vector2f size;
-    sf::Vector2f position;
-    sf::Vector2f origin;
-    float borderWidth;
-    float cornerRadius;
-    unsigned int quality;
 
-    CustomRectangle() {
 
+struct CircleGenerator {
+    static float constexpr pi{ 3.141592653 };
+    float const radius = 0.0f;
+    uint32_t const quality = 0;
+    float const da = 0.0f;
+
+    CircleGenerator(float radius_, uint32_t quality_)
+        : radius{ radius_ }
+        , quality{ quality_ }
+        , da{ (2.0f * pi) / static_cast<float>(quality) }
+    {
+    }
+
+    sf::Vector2f getPoint(uint32_t i) const
+    {
+        float const angle{ da * static_cast<float>(i) };
+        return { radius * sf::Vector2f{cos(angle), sin(angle)} };
     }
 };
 
+void generateCircle(sf::VertexArray& vertex_array, sf::Vector2f position, float radius, uint32_t quality)
+{
+    CircleGenerator const generator{ radius, quality };
+    for (uint32_t i{ 0 }; i < quality; ++i) {
+        vertex_array[i].position = position + generator.getPoint(i);
+    }
+}
+
+struct RoundedRectangleGenerator {
+    sf::Vector2f const size;
+    sf::Vector2f const centers[4];
+    uint32_t const arc_quality;
+    CircleGenerator const generator;
+
+    RoundedRectangleGenerator(sf::Vector2f size_, float radius, uint32_t quality)
+        : size{size_}
+        , centers{
+            {size.x - radius, size.y - radius},
+            {radius, size.y - radius},
+            {radius, radius},
+            {size.x - radius, radius}
+        }
+        , arc_quality{quality / 4}
+        , generator{radius, quality - 4}
+    { }
+
+    sf::Vector2f getPoint(uint32_t i) const {
+        uint32_t const corner_idx{ i / arc_quality };
+        return centers[corner_idx] + generator.getPoint(i - corner_idx);
+    }
+};
+
+void generateRoundedRectangle(sf::VertexArray& vertex_array, sf::Vector2f position, sf::Vector2f size, float radius, uint32_t quality) {
+    RoundedRectangleGenerator const generator{ size, radius, quality };
+    for (uint32_t i{ 0 }; i < quality; ++i) {
+        vertex_array[i].position = position + generator.getPoint(i);
+    }
+}
 
 static float wrapToPi(float angle) {
     angle = fmodf(angle + PI, 2 * PI);
@@ -48,6 +94,26 @@ int main() {
 
     int N = 100;
     std::vector<DoublePendulum> pendulums;
+
+    uint32_t quality = 4 * 20;
+    float borderWidth = 10.f;
+
+    sf::VertexArray rrect;
+    rrect.setPrimitiveType(sf::PrimitiveType::TriangleFan);
+    rrect.resize(quality);
+    generateRoundedRectangle(rrect, sf::Vector2f(500.f, 0.f), sf::Vector2f(500.f, 500.f), 50, quality);
+    for (std::size_t i = 0; i < rrect.getVertexCount(); ++i) {
+        rrect[i].color = sf::Color::Blue;
+    }
+
+    sf::VertexArray rrect2;
+    rrect2.setPrimitiveType(sf::PrimitiveType::TriangleFan);
+    rrect2.resize(quality);
+    generateRoundedRectangle(rrect2, sf::Vector2f(500.f + borderWidth, borderWidth), sf::Vector2f(500.f - 2.0f * borderWidth, 500.f - 2.0f * borderWidth), 50 - borderWidth, quality);
+    for (std::size_t i = 0; i < rrect2.getVertexCount(); ++i) {
+        rrect2[i].color = sf::Color::White;
+    }
+
 
     float thetarange = 0.001f;
     //for (int i = 0; i < N; i++) {
@@ -91,6 +157,9 @@ int main() {
         plot.draw(window);
         window.draw(theta1Text);
         window.draw(theta2Text);
+
+        //window.draw(rrect);
+        //window.draw(rrect2);
 
         window.display();
     }
